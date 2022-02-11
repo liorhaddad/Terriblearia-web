@@ -1,0 +1,147 @@
+.progress {
+    height: 0.75em;
+    width: 7.5em;
+    outline: 1px solid black;
+    background: linear-gradient(to right, black 0em, white 0%);
+    border-radius: 10em;
+}
+
+div.options {
+    position: fixed;
+    background: linear-gradient(to top, #F0F0F0 6vh, #D9D9D9 6vh 6.1vh, #FFFFFF 6.1vh);
+    color: black;
+    padding-top: 1vh;
+    padding-bottom: 1.5vh;
+    padding-left: 1.5vw;
+    padding-right: 1.5vw;
+    min-height: 5vh;
+    min-width: 23ch;
+}
+
+.options #optionsPromptXButton {
+    padding-top: 0.5vh;
+    padding-right: 1vw;
+    padding-left: 1vw;
+    margin-top: -1vh;
+    margin-right: -1.5vw;
+    font-size: 1.2vw;
+    float: right;
+    user-select: none;
+    transition: background-color 100ms linear;
+}
+.options #optionsPromptXButton:hover {
+    background-color: red;
+}
+
+.prompt input[type="checkbox"] {
+    width: 2vh;
+    height: 2vh;
+    appearance: none;
+    outline: 1px solid #333333;
+    background-color: white;
+    transform: translateY(0.5vh);
+    transition: outline 300ms linear;
+}
+
+.prompt input[type="checkbox"]:hover {
+    outline: 1px solid #0078D7;
+}
+
+
+.prompt input[type="checkbox"]:checked:after {
+    content: "\2714\fe0f";
+    transition: text-shadow 300ms linear;
+    color: transparent;
+    text-shadow: 0 0 0 #333333;
+    font-size: 1.7vh;
+    position: absolute;
+    top: -9%;
+    left: -9%;
+}
+.prompt input[type="checkbox"]:checked:hover:after {
+    text-shadow: 0 0 0 #0078D7;
+}
+
+.prompt input[type="color"] {
+    width: 3vh;
+    height: 3vh;
+    padding: 0em;
+    border: 0em;
+}
+
+.prompt button {
+    font-size: 2vh;
+    height: 3vh;
+    border: 0.2ch solid;
+    border-radius: 0px;
+    border-color: #ADADAD;
+    background: #E1E1E1;
+    min-width: 10ch;
+    transition: border-color 300ms linear, background 300ms linear;
+}
+
+.prompt button:hover {
+    border-color: #0078D7;
+    background: #E5F1FB;
+}
+
+.prompt {
+    border: 0.2ch solid;
+    font-family: "Arial", var(--font), "Comic Sans MS";
+    font-size: 2vh;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.prompt, .center.center-vertical {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+.center {
+    position: absolute;
+    left: 50%;
+    transform:translateX(-50%);
+}
+
+.center-vertical {
+    position: absolute;
+    top: 50%;
+    transform:translateY(-50%);
+}
+
+.selected, ::-moz-selection {
+    background: var(--background-inverted);
+    color: var(--text-color-inverted);
+}
+
+.selected, ::selection {
+    background: var(--background-inverted);
+    color: var(--text-color-inverted);
+}
+
+#cursor {
+    background-color: var(--text-color);
+    height: var(--cursor-height);
+    display: inline-flex;
+    align-items: flex-end;
+    padding: 0;
+    border: 0;
+    margin-left: 0em;
+    margin-right: -1ch;
+}
+
+span {
+    white-space: pre-wrap;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+html {
+    font-family: var(--font), Consolas, "Comic Sans MS";
+    font-size: 1.8vh;
+    background: var(--background);
+    color: var(--text-color);
+}
