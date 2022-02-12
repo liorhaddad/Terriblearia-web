@@ -387,9 +387,9 @@ async function main()
     pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, "/Users/web_user/Documents/Terrible-aria/");
     pyodide.FS.syncfs(true, function(err){if (err !== null) window.alert("Error loading files: " + (err + '') + "\nPlease exit the page.")});
     pyodide.FS.chdir("/Users/web_user/Documents/Terrible-aria/");
-    const terriblearia = (await (await fetch("/terriblearia.py") ).text()).split('\n').slice(0, -2).join('\n');
-    const override_io  = (await (await fetch("/override_io.py")  ).text());
-    const debugger_py  = (await (await fetch("/debugger.py")     ).text());
+    const terriblearia = (await (await fetch("https://raw.githubusercontent.com/MacroPixel/terrible-aria/main/terriblearia.py")).text()).split('\n').slice(0, -2).join('\n');
+    const override_io = await (await fetch("/override_io.py")).text();
+    const debugger_py = await (await fetch("/debugger.py")).text();
     pyodide.runPython(terriblearia, pyodide.globals);
     // Set up custom stuff for python interactions
     await pyodide.loadPackage("unthrow")
