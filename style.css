@@ -131,6 +131,19 @@ div.options {
     border: 0;
     margin-left: 0em;
     margin-right: -1ch;
+    animation: cursor-blink-animation 1.06s steps(2, start) infinite;
+    -webkit-animation: cursor-blink-animation 1.06s steps(2, start) infinite;
+}
+
+@keyframes cursor-blink-animation {
+    to {
+        visibility: hidden;
+    }
+}
+@-webkit-keyframes cursor-blink-animation {
+    to {
+        visibility: hidden;
+    }
 }
 
 span {

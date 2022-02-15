@@ -414,7 +414,6 @@ async function main()
     fields.input = fields.pointers.inputBox;
     fields.output = fields.pointers.output;
     updateInputBox();
-    window.setTimeout(function blink() {const cursor = fields.input.children.cursor; if (cursor) {cursor.style.setProperty("visibility", (cursor.style.getPropertyValue("visibility") === "hidden" ? "visible" : "hidden"));} setTimeout(blink, 500)}, 0);
 
     // Set CSS variables
     setCSSVar("font", "monospace");
