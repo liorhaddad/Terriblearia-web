@@ -87,7 +87,7 @@ let fields = {
     }
 }
 let web_stdio = {
-    write: function write(s) {
+    write: function write(s, color) {
         if (pyio.surpressNextOutputs > 0)
             pyio.surpressNextOutputs--;
         else
@@ -119,7 +119,14 @@ let web_stdio = {
             }
             for (let i = 0; i < text.length; i++)
             {
-                let textNode = document.createTextNode(text[i]);
+                let textNode;
+                if (color === (void 0)) textNode = document.createTextNode(text[i]);
+                else
+                {
+                    textNode = document.createElement("span");
+                    textNode.innerText = text[i];
+                    textNode.style.color = color;
+                }
                 fields.output.appendChild(textNode);
                 if (i + 1 !== text.length)
                     fields.output.appendChild(document.createElement('br'));

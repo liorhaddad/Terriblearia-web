@@ -1,5 +1,6 @@
 import itertools
 import traceback
+import sys
 __resumer = unthrow.Resumer()
 
 def __get_user_input():
@@ -26,7 +27,7 @@ def __exec_user_input( user_input):
   try:
     retval = __exec_function( user_input )( user_input, globals() )
   except Exception as e:
-    print( traceback.format_exc() )
+    print( traceback.format_exc(), file = sys.stderr )
   else:
     if retval is not None:
       print( retval )
