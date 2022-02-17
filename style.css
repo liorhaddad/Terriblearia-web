@@ -146,6 +146,18 @@ div.options {
     }
 }
 
+#mobileInput {
+    font-family: var(--font), Consolas, "Comic Sans MS";
+    background: var(--background);
+    color: var(--text-color);
+    border: none;
+    width: 90%;
+}
+
+#mobileInput:focus-visible {
+    outline: none;
+}
+
 span {
     white-space: pre-wrap;
     margin-left: 0px;

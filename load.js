@@ -20,6 +20,7 @@ const carrigeReturn = (text) => {
     });
     return lines.join("\n").concat((text.charAt(text.length-1) === "\r") ? "\r" : "");
 };
+const debugLog = (...args) => args.forEach(v=>{console.log(v); web_stdio.write(v + "\n");});
 
 let settings = {
     "save": function saveSettings() {
@@ -367,6 +368,35 @@ async function handlePaste(e)
     }
     updateInputBox();
 }
+async function handleMobile(e)
+{
+    let mobileInput = document.getElementById("mobileInput");
+    if (mobileInput === null)
+    {
+        document.documentElement.removeEventListener('paste',      handlePaste);
+        document.documentElement.removeEventListener('keydown',    handleUserKey);
+        mobileInput = document.createElement("input");
+        mobileInput.type = "text";
+        mobileInput.id = "mobileInput";
+        mobileInput.addEventListener("keyup", function(e) {
+            if (e.key === "Enter")
+            {
+                e.preventDefault();
+                pyio.userInput = mobileInput.value;
+                mobileInput.value = "";
+                trySubmitInput();
+                handleMobile();
+            }
+        });
+        document.getElementById("cursor").replaceWith(mobileInput);
+    }
+    mobileInput.focus();
+    for (let i = 0; i < 5; i++)
+    {
+        await sleep(100);
+        mobileInput.focus();
+    }
+}
 async function main()
 {
     // Load data
@@ -436,6 +466,7 @@ async function main()
     }
     document.documentElement.addEventListener('keydown', handleUserKey);
     document.documentElement.addEventListener('paste', handlePaste);
+    document.documentElement.addEventListener('touchend', handleMobile);
     pyodide.run = function resumeMain()
     {
         if (!pyodide.runPython(`resumer.finished`) || gameExtender.mode === "debug")
