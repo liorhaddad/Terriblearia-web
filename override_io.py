@@ -11,6 +11,7 @@ g_called_stop = False
 
 class WebIO(object):
     def __init__(self, handle = 0):
+        self.__print_count = 0
         self._handle = handle
         self.buffer = None
         self.closed = False
@@ -33,6 +34,7 @@ class WebIO(object):
     def isatty(self):
         return True
     def read(self, size = -1):
+        self.__print_count = 0
         inp = ""
         while (size < 0) or (len(inp) < size):
             unthrow.stop({"cmd": "readline"})
@@ -41,6 +43,7 @@ class WebIO(object):
     def readable(self):
         return True
     def readline(self, size = -1):
+        self.__print_count = 0
         unthrow.stop({"cmd": "readline"})
         inp = g_user_input + "\n"
         return inp if size < 0 else inp[:size]
@@ -65,13 +68,30 @@ class WebIO(object):
         else:
             web_stdio.write(text)
             pass
+
+        self.__print_count += len(text)
+        if (text.find("\n") >= 0):
+            self.__print_count = 0
+        elif (self.__print_count > 2000):
+            self.__print_count = 0
+            self.flush()
     def writelines(self, lines):
         for line in lines:
             self.write(line)
-def __o_time_sleep(seconds):
-    unthrow.stop({"cmd": "sleep", "time": seconds * 1000})
-time.sleep = __o_time_sleep
-del __o_time_sleep
+
+class TimeSleep(object):
+    def __init__(self):
+        self.__str_text = time.sleep.__str__()
+        self.__repr_text = time.sleep.__repr__()
+    def __str__(self):
+        return self.__str_text
+    def __repr__(self):
+        return self.__repr_text
+    def __call__(self, seconds):
+        unthrow.stop({"cmd": "sleep", "time": seconds * 1000})
+
+time.sleep = TimeSleep()
+del TimeSleep
 
 sys.__stdin__  = sys.stdin  = WebIO(0)
 sys.__stdout__ = sys.stdout = WebIO(1)

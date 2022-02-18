@@ -1,4 +1,8 @@
 'use strict';
+window.str = function str(x){return String(x)}
+String.prototype.lower  = function lower (...args){return String.prototype.toLowerCase.apply(this, args)}
+String.prototype.upper  = function upper (...args){return String.prototype.toUpperCase.apply(this, args)}
+String.prototype.equals = function equals(...args){for (const arg of args) {if (String(arg) === String(this)) return true;} return false}
 let pyodide;
 const cookie = {
     "data": {},
@@ -9,16 +13,39 @@ const cookie = {
 const sleep = async (ms) => new Promise(r => setTimeout(r, ms));
 const rgb2hex = (rgb) => `#${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`;
 const invertHex = (hex) => '#'.concat((Number(`0x1${hex.slice(1).toUpperCase()}`) ^ 0xFFFFFF).toString(16).substr(1).toUpperCase());
-const carrigeReturn = (text) => {
+const flattenTextForPrinting = (last, text, cursor = -1) => {
     let lines = text.split("\n");
-    lines = lines.map(line => {
-        let upd = "";
-        line.split("\r").reverse().forEach(a=>{
-            upd = upd.concat(a.slice(upd.length));
-        });
+    if (cursor < 0) cursor = lines[lines.length-1].length;
+    lines = lines.map((line, index) => {
+        let upd = last;
+        last = "";
+        for (let i = 0; i < line.length; i++)
+        {
+            switch (line[i])
+            {
+                case "\b":
+                {
+                    cursor--;
+                    break;
+                }
+                case "\r":
+                {
+                    cursor = 0;
+                    break;
+                }
+                default:
+                {
+                    upd = upd.substr(0, cursor) + line[i] + upd.substr(cursor + 1);
+                    cursor++;
+                    break;
+                }
+            }
+        }
+        if (index + 1 !== lines.length)
+            cursor = 0;
         return upd;
     });
-    return lines.join("\n").concat((text.charAt(text.length-1) === "\r") ? "\r" : "");
+    return [lines.join("\n"), cursor];
 };
 const debugLog = (...args) => args.forEach(v=>{console.log(v); web_stdio.write(v + "\n");});
 
@@ -88,19 +115,21 @@ let fields = {
     }
 }
 let web_stdio = {
-    write: function write(s, color) {
+    write: (()=>{let textCursor = 0; return function write(s, color) {
         if (pyio.surpressNextOutputs > 0)
             pyio.surpressNextOutputs--;
         else
         {
             let scrollToBottom = (Math.abs(document.documentElement.scrollHeight - document.documentElement.scrollTop - document.documentElement.clientHeight) < 1);
             let leftover = "";
-            if (fields.output.lastChild && fields.output.lastChild.nodeType === Node.TEXT_NODE)
+            if (fields.output.lastChild && fields.output.lastChild.nodeType === Node.ELEMENT_NODE && fields.output.lastChild.tagName.lower() === "span")
             {
                 leftover = fields.output.lastChild.textContent;
                 fields.output.lastChild.remove();
             }
-            const text = carrigeReturn(leftover.concat(s)).split('\n');
+            let text;
+            [text, textCursor] = flattenTextForPrinting(leftover, s, textCursor);
+            text = text.split('\n');
             if (gameExtender.mode === "game")
             {
                 if (gameExtender.gameMode !== "paused" && s === "[Q] Return to menu")
@@ -120,22 +149,23 @@ let web_stdio = {
             }
             for (let i = 0; i < text.length; i++)
             {
-                let textNode;
-                if (color === (void 0)) textNode = document.createTextNode(text[i]);
-                else
+                if (text[i] !== "")
                 {
-                    textNode = document.createElement("span");
+                    let textNode = document.createElement("span");
                     textNode.innerText = text[i];
-                    textNode.style.color = color;
+                    if (color !== (void 0))
+                    {
+                        textNode.style.color = color;
+                    }
+                    fields.output.appendChild(textNode);
                 }
-                fields.output.appendChild(textNode);
                 if (i + 1 !== text.length)
                     fields.output.appendChild(document.createElement('br'));
             }
             if (scrollToBottom)
                 scrollTo(scrollX, document.documentElement.scrollHeight);
         }
-    },
+    }})(),
     read: async function read() {
         return new Promise(resolve => pyio.sendInput = resolve);
     },
@@ -183,6 +213,7 @@ let gameExtender = {
 }
 function setCSSVar(what, value)
 {
+    // this function sucks
     document.documentElement.style.setProperty("--".concat(what), value);
 }
 function updateInputBox()
@@ -217,6 +248,23 @@ function trySubmitInput()
         {
             gameExtender.toggleOptions();
         }
+        else if (gameExtender.gameMode.equals("paused", "debug") && input.toLowerCase() === "debug plz")
+        {
+            const swapFrom = fields.pointers[gameExtender.mode === "debug" ? "debugOutput" : "output"];
+            const swapTo = fields.pointers[gameExtender.mode === "debug" ? "output" : "debugOutput"];
+            fields.pointers.tempOutputs.appendChild(swapFrom);
+            fields.input.parentElement.insertBefore(swapTo, fields.input);
+            scrollTo(scrollX, document.documentElement.scrollHeight);
+            fields.output = swapTo;
+            pyodide.runPython("resumer, __resumer = __resumer, resumer\nrun, __run = __run, run\n");
+            gameExtender.mode = (gameExtender.mode === "game" ? "debug" : "game");
+            if (!pyio.needsInput)
+            {
+                pyio.surpressNextOutputs += 3;
+                pyio.sendInput("web::toggleDebugMode");
+            }
+            pyio.needsInput = true;
+        }
         else
         {
             pyio.surpressNextOutputs++;
@@ -228,7 +276,7 @@ function handleUserKey(e)
 {
     const mren = (function mren(o, key, badval){if (Object.prototype.hasOwnProperty.call(o, key + "")) return o[key + ""]; else return badval;});
     let key = e.key;
-    if (key.toLowerCase() === "d" && e.shiftKey && e.altKey && (gameExtender.mode === "game" || gameExtender.mode === "debug"))
+    if (key.toLowerCase() === "d" && e.shiftKey && e.altKey && gameExtender.mode.equals("game", "debug"))
     {
         e.preventDefault();
         const swapFrom = fields.pointers[gameExtender.mode === "debug" ? "debugOutput" : "output"];
@@ -378,17 +426,22 @@ async function handleMobile(e)
         mobileInput = document.createElement("input");
         mobileInput.type = "text";
         mobileInput.id = "mobileInput";
-        mobileInput.addEventListener("keyup", function(e) {
+        mobileInput.addEventListener("keyup", function keyup(e) {
             if (e.key === "Enter")
             {
                 e.preventDefault();
                 pyio.userInput = mobileInput.value;
                 mobileInput.value = "";
                 trySubmitInput();
-                handleMobile();
+                mobileInput = document.createElement("input");
+                mobileInput.type = "text";
+                mobileInput.id = "mobileInput";
+                mobileInput.addEventListener("keyup", keyup);
+                document.getElementById("cursor")?.replaceWith(mobileInput);
+                scrollBy(0, window.innerHeight * 2);
             }
         });
-        document.getElementById("cursor").replaceWith(mobileInput);
+        document.getElementById("cursor")?.replaceWith(mobileInput);
     }
     mobileInput.focus();
     for (let i = 0; i < 5; i++)
