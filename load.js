@@ -4,11 +4,20 @@ String.prototype.lower  = function lower (...args){return String.prototype.toLow
 String.prototype.upper  = function upper (...args){return String.prototype.toUpperCase.apply(this, args)}
 String.prototype.equals = function equals(...args){for (const arg of args) {if (String(arg) === String(this)) return true;} return false}
 let pyodide;
-const cookie = {
+const config = {
     "data": {},
-    "save": () => {document.cookie = encodeURIComponent(window.btoa(encodeURIComponent(JSON.stringify(cookie.data))))},
-    "load": () => {cookie.data = (document.cookie === "" ? {"settings": {"skipIntro": false}} : JSON.parse(decodeURIComponent(window.atob(decodeURIComponent(document.cookie)))))},
-    "clear": () => {document.cookie = "|;expires=" + new Date().toUTCString();}
+}
+if (typeof(Storage) !== "undefined")
+{
+    config["save"] = () => {window.localStorage.setItem("config", JSON.stringify(config.data))};
+    config["load"] = () => {const data = window.localStorage.getItem("config"); config.data = (data === null ? {"settings": {"skipIntro": false}} : JSON.parse(data))};
+    config["clear"] = () => {window.localStorage.removeItem("config")};
+}
+else
+{
+    config["save"] = () => {document.cookie = encodeURIComponent(window.btoa(encodeURIComponent(JSON.stringify(config.data))))};
+    config["load"] = () => {config.data = (document.cookie === "" ? {"settings": {"skipIntro": false}} : JSON.parse(decodeURIComponent(window.atob(decodeURIComponent(document.cookie)))))};
+    config["clear"] = () => {document.cookie = "|;expires=" + new Date().toUTCString();};
 }
 const sleep = async (ms) => new Promise(r => setTimeout(r, ms));
 const rgb2hex = (rgb) => `#${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`;
@@ -51,11 +60,11 @@ const debugLog = (...args) => args.forEach(v=>{console.log(v); web_stdio.write(v
 
 let settings = {
     "save": function saveSettings() {
-        if ((typeof cookie.data.settings) !== "object") cookie.data.settings = {};
-        cookie.data.settings.skipIntro = settings.skipIntro;
-        cookie.data.settings.backgroundColor = settings.backgroundColor;
-        cookie.data.settings.textColor = settings.textColor;
-        cookie.save();
+        if ((typeof config.data.settings) !== "object") config.data.settings = {};
+        config.data.settings.skipIntro = settings.skipIntro;
+        config.data.settings.backgroundColor = settings.backgroundColor;
+        config.data.settings.textColor = settings.textColor;
+        config.save();
 
         setCSSVar("background", settings.backgroundColor);
         setCSSVar("text-color", settings.textColor);
@@ -63,9 +72,9 @@ let settings = {
         setCSSVar("background-inverted", invertHex(rgb2hex(window.getComputedStyle(document.documentElement).backgroundColor)));
     },
     "load": function loadSettings() {
-        settings.skipIntro = (cookie?.data?.settings?.skipIntro !== undefined ? cookie.data.settings.skipIntro : false);
-        settings.backgroundColor = (cookie?.data?.settings?.backgroundColor !== undefined ? cookie.data.settings.backgroundColor : "#000000");
-        settings.textColor = (cookie?.data?.settings?.textColor !== undefined ? cookie.data.settings.textColor : "#FFFFFF");
+        settings.skipIntro = (config?.data?.settings?.skipIntro !== undefined ? config.data.settings.skipIntro : false);
+        settings.backgroundColor = (config?.data?.settings?.backgroundColor !== undefined ? config.data.settings.backgroundColor : "#000000");
+        settings.textColor = (config?.data?.settings?.textColor !== undefined ? config.data.settings.textColor : "#FFFFFF");
 
         setCSSVar("background", settings.backgroundColor);
         setCSSVar("text-color", settings.textColor);
@@ -453,7 +462,7 @@ async function handleMobile(e)
 async function main()
 {
     // Load data
-    cookie.load();
+    config.load();
     settings.load();
 
     {
@@ -466,26 +475,26 @@ async function main()
             e.style.setProperty("background", `linear-gradient(to right, ${v("color").toString()} ${(int(v("value")) / int(v("max"))) * 7.5}em, white 0%)`);
             log.apply(this, [("[" + v("value") + "/" + v("max") + "]"), ...args]);
         };
-    // Load pyodide
-    pyodide = await loadPyodide({
-      indexURL : "/pyodide/",
-      fullStdLib : true
-    });
-
-    // Load terrible-aria
-    pyodide.FS.mkdirTree("/Users/web_user/Documents/Terrible-aria/");
-    pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, "/Users/web_user/Documents/Terrible-aria/");
-    pyodide.FS.syncfs(true, function(err){if (err !== null) window.alert("Error loading files: " + (err + '') + "\nPlease exit the page.")});
-    pyodide.FS.chdir("/Users/web_user/Documents/Terrible-aria/");
-    const terriblearia = (await (await fetch("https://raw.githubusercontent.com/MacroPixel/terrible-aria/main/terriblearia.py")).text()).split('\n').slice(0, -2).join('\n');
-    const override_io = await (await fetch("/override_io.py")).text();
-    const debugger_py = await (await fetch("/debugger.py")).text();
-    pyodide.runPython(terriblearia, pyodide.globals);
-    // Set up custom stuff for python interactions
-    await pyodide.loadPackage("unthrow")
-    await pyodide.registerJsModule("web_stdio", web_stdio);
-    await pyodide.runPythonAsync(override_io, pyodide.globals);
-    await pyodide.runPythonAsync(debugger_py, pyodide.globals);
+        // Load pyodide
+        pyodide = await loadPyodide({
+          indexURL : "/pyodide/",
+          fullStdLib : true
+        });
+    
+        // Load terrible-aria
+        pyodide.FS.mkdirTree("/Users/web_user/Documents/Terrible-aria/");
+        pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, "/Users/web_user/Documents/Terrible-aria/");
+        pyodide.FS.syncfs(true, function(err){if (err !== null) window.alert("Error loading files: " + (err + '') + "\nPlease exit the page.")});
+        pyodide.FS.chdir("/Users/web_user/Documents/Terrible-aria/");
+        const terriblearia = (await (await fetch("https://raw.githubusercontent.com/MacroPixel/terrible-aria/main/terriblearia.py")).text()).split('\n').slice(0, -2).join('\n');
+        const override_io = await (await fetch("/override_io.py")).text();
+        const debugger_py = await (await fetch("/debugger.py")).text();
+        pyodide.runPython(terriblearia, pyodide.globals);
+        // Set up custom stuff for python interactions
+        await pyodide.loadPackage("unthrow")
+        await pyodide.registerJsModule("web_stdio", web_stdio);
+        await pyodide.runPythonAsync(override_io, pyodide.globals);
+        await pyodide.runPythonAsync(debugger_py, pyodide.globals);
 
         console.log = log;
     }
