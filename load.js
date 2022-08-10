@@ -257,7 +257,7 @@ function trySubmitInput()
         {
             gameExtender.toggleOptions();
         }
-        else if (gameExtender.gameMode.equals("paused", "debug") && input.toLowerCase() === "debug plz")
+        else if ((gameExtender.gameMode === "paused" || gameExtender.mode === "debug") && input.toLowerCase() === "!debug")
         {
             const swapFrom = fields.pointers[gameExtender.mode === "debug" ? "debugOutput" : "output"];
             const swapTo = fields.pointers[gameExtender.mode === "debug" ? "output" : "debugOutput"];
@@ -477,7 +477,7 @@ async function main()
         };
         // Load pyodide
         pyodide = await loadPyodide({
-          indexURL : "/pyodide/",
+          indexURL : "./pyodide/",
           fullStdLib : true
         });
     
@@ -487,8 +487,8 @@ async function main()
         pyodide.FS.syncfs(true, function(err){if (err !== null) window.alert("Error loading files: " + (err + '') + "\nPlease exit the page.")});
         pyodide.FS.chdir("/Users/web_user/Documents/Terrible-aria/");
         const terriblearia = (await (await fetch("https://raw.githubusercontent.com/MacroPixel/terrible-aria/main/terriblearia.py")).text()).split('\n').slice(0, -2).join('\n');
-        const override_io = await (await fetch("/override_io.py")).text();
-        const debugger_py = await (await fetch("/debugger.py")).text();
+        const override_io = await (await fetch("./override_io.py")).text();
+        const debugger_py = await (await fetch("./debugger.py")).text();
         pyodide.runPython(terriblearia, pyodide.globals);
         // Set up custom stuff for python interactions
         await pyodide.loadPackage("unthrow")
@@ -562,7 +562,7 @@ async function main()
         else
         {
             pyio.surpressNextOutputs = 0;
-            web_stdio.write("\nC:\\Users\\web_user\\Documents\\Terrible-aria>");
+            web_stdio.write("C:".concat(pyodide.FS.cwd().replaceAll("/", "\\")).concat(">"));
             gameExtender.gameMode = "exit";
         }
     }
